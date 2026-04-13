@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wave Superposition Lab | Number Theory Ent.</title>
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --card: #151921;
+            --text: #adbac7;
+            --accent: #539bf5;
+            --wave1: #316dca;
+            --wave2: #f47067;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            border: 1px solid #444c56;
+            width: 850px;
+        }
+
+        canvas {
+            background: #000;
+            border-radius: 10px;
+            border: 1.5px solid #444c56;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+        }
+
+        .btn-group {
+            grid-column: span 2;
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #444c56;
+            background: #22272e;
+            color: var(--text);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        button:hover {
+            background: #2d333b;
+            transform: scale(1.02);
+        }
+
+        .btn-main {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-main:hover { background: #6cb6ff; }
+
+        input[type=range] { 
+            width: 100%; 
+            accent-color: var(--accent); 
+            cursor: pointer;
+        }
+
+        label { 
+            font-size: 0.8rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align: center; color: #fff;">🌊 Superposition Simulation</h2>
+    
+    <canvas id="waveCanvas" width="800" height="380"></canvas>
+
+    <div class="controls">
+        <div class="btn-group">
+            <button id="playPause" class="btn-main" onclick="toggleSim()">Pause Simulation</button>
+            <button onclick="resetSim()">Reset Time</button>
+            <button onclick="saveFrame()">Download Screenshot</button>
+        </div>
+
+        <div>
+            <label style="color: var(--wave1)">Wave 1 Amp (A1)</label>
+            <input type="range" id="amp1" min="0" max="90" value="45">
+        </div>
+        <div>
+            <label style="color: var(--wave2)">Wave 2 Amp (A2)</label>
+            <input type="range" id="amp2" min="0" max="90" value="45">
+        </div>
+        <div>
+            <label>Wavelength / Frequency</label>
+            <input type="range" id="freq" min="0.01" max="0.07" step="0.005" value="0.035">
+        </div>
+        <div>
+            <label>Vibe Speed</label>
+            <input type="range" id="speed" min="0" max="0.12" step="0.01" value="0.05">
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    const playBtn = document.getElementById('playPause');
+
+    let t = 0;
+    let running = true;
+
+    function toggleSim() {
+        running = !running;
+        playBtn.textContent = running ? "Pause Simulation" : "Resume Simulation";
+        if (running) render();
+    }
+
+    function resetSim() {
+        t = 0;
+        if (!running) draw();
+    }
+
+    function saveFrame() {
+        const link = document.createElement('a');
+        link.download = 'interference-pattern.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Grid setup
+        ctx.strokeStyle = "#1c2128";
+        ctx.lineWidth = 1;
+        for(let i=0; i<canvas.width; i+=50) {
+            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke();
+        }
+
+        const a1 = parseFloat(document.getElementById('amp1').value);
+        const a2 = parseFloat(document.getElementById('amp2').value);
+        const f = parseFloat(document.getElementById('freq').value);
+        const s = parseFloat(document.getElementById('speed').value);
+        const midY = canvas.height / 2;
+
+        // Draw Wave 1 (Dashed Blue)
+        ctx.setLineDash([8, 4]);
+        ctx.strokeStyle = '#316dca';
+        ctx.beginPath();
+        for(let x=0; x<canvas.width; x++) {
+            let y = midY + a1 * Math.sin(x * f - t);
+            x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+
+        // Draw Wave 2 (Dashed Red)
+        ctx.strokeStyle = '#f47067';
+        ctx.beginPath();
+        for(let x=0; x<canvas.width; x++) {
+            let y = midY + a2 * Math.sin(x * f + t);
+            x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+
+        // Draw Resultant (Solid White)
+        ctx.setLineDash([]);
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.beginPath();
+        for(let x=0; x<canvas.width; x++) {
+            let y1 = a1 * Math.sin(x * f - t);
+            let y2 = a2 * Math.sin(x * f + t);
+            x === 0 ? ctx.moveTo(x, midY + y1 + y2) : ctx.lineTo(x, midY + y1 + y2);
+        }
+        ctx.stroke();
+        ctx.lineWidth = 1;
+
+        if (running) t += s;
+    }
+
+    function render() {
+        draw();
+        if (running) requestAnimationFrame(render);
+    }
+
+    render();
+</script>
+</body>
+</html>
